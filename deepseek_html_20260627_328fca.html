@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Coaching OS — v2.0 | Neon Kanban</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #06060b;
+            --bg-panel: #0c0c16;
+            --bg-card: #111122;
+            --bg-sidebar: #080814;
+            --neon-cyan: #00f0ff;
+            --neon-cyan-dim: #008899;
+            --neon-magenta: #ff2df7;
+            --neon-magenta-dim: #991a94;
+            --neon-purple: #a855f7;
+            --neon-purple-dim: #5b21b6;
+            --neon-green: #39ff9b;
+            --neon-amber: #ffb347;
+            --neon-red: #ff3b5c;
+            --text-primary: #e0e0f0;
+            --text-secondary: #9898b8;
+            --text-muted: #606078;
+            --border-subtle: #1a1a30;
+            --border-glow: #2a2a45;
+            --glass-bg: rgba(12, 12, 24, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.06);
+            --shadow-neon-cyan: 0 0 12px rgba(0, 240, 255, 0.25), 0 0 40px rgba(0, 240, 255, 0.08);
+            --shadow-neon-magenta: 0 0 12px rgba(255, 45, 247, 0.25), 0 0 40px rgba(255, 45, 247, 0.08);
+            --shadow-neon-purple: 0 0 14px rgba(168, 85, 247, 0.3), 0 0 45px rgba(168, 85, 247, 0.1);
+            --shadow-card-hover: 0 8px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 240, 255, 0.12);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-bounce: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            --font-display: 'Orbitron', 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-body: 'Inter', system-ui, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 15px;
+        }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ── Background Grid ── */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 65%);
+            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 65%);
+        }
+        .bg-grid::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 18% 15%, rgba(0, 240, 255, 0.04) 0%, transparent 55%),
+                radial-gradient(ellipse at 78% 25%, rgba(168, 85, 247, 0.05) 0%, transparent 55%),
+                radial-gradient(ellipse at 50% 80%, rgba(255, 45, 247, 0.03) 0%, transparent 55%);
+        }
+
+        /* ── App Container ── */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 300px;
+            min-width: 300px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 10;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-glow) transparent;
+            transition: transform var(--transition-smooth);
+        }
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border-glow);
+            border-radius: 10px;
+        }
+
+        .sidebar-header {
+            padding: 22px 20px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            background: var(--bg-sidebar);
+            z-index: 5;
+            backdrop-filter: blur(12px);
+        }
+        .sidebar-logo {
+            font-family: var(--font-display);
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2px;
+        }
+        .sidebar-version {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+        .sidebar-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 6px;
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+        }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green), 0 0 20px rgba(57, 255, 155, 0.5);
+            animation: statusPulse 2.2s ease-in-out infinite;
+        }
+        @keyframes statusPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 6px var(--neon-green), 0 0 16px rgba(57, 255, 155, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 14px var(--neon-green), 0 0 32px rgba(57, 255, 155, 0.7);
+            }
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 10px 0;
+        }
+        .nav-category {
+            margin-bottom: 2px;
+        }
+        .nav-cat-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            transition: color var(--transition-fast);
+            user-select: none;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+        .nav-cat-header:hover {
+            color: var(--text-secondary);
+        }
+        .nav-cat-header .cat-icon {
+            font-size: 0.9rem;
+            width: 18px;
+            text-align: center;
+        }
+        .nav-cat-header .cat-arrow {
+            margin-left: auto;
+            font-size: 0.6rem;
+            transition: transform var(--transition-smooth);
+        }
+        .nav-category.open .nav-cat-header .cat-arrow {
+            transform: rotate(90deg);
+        }
+
+        .nav-items {
+            list-style: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height var(--transition-smooth);
+        }
+        .nav-category.open .nav-items {
+            max-height: 600px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 20px 8px 36px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+            border-left: 2px solid transparent;
+            position: relative;
+            font-family: var(--font-body);
+        }
+        .nav-item:hover {
+            color: var(--neon-cyan);
+            background: rgba(0, 240, 255, 0.03);
+            border-left-color: var(--neon-cyan);
+            text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+        }
+        .nav-item.active {
+            color: var(--neon-cyan);
+            background: rgba(0, 240, 255, 0.06);
+            border-left-color: var(--neon-cyan);
+            font-weight: 500;
+        }
+        .nav-item .item-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            flex-shrink: 0;
+            transition: all var(--transition-fast);
+        }
+        .nav-item:hover .item-dot,
+        .nav-item.active .item-dot {
+            background: var(--neon-cyan);
+            box-shadow: 0 0 8px var(--neon-cyan);
+        }
+        .nav-item .item-badge {
+            margin-left: auto;
+            font-size: 0.62rem;
+            padding: 2px 7px;
+            border-radius: 10px;
+            font-family: var(--font-mono);
+            letter-spacing: 0.04em;
+        }
+        .badge-high {
+            background: rgba(57, 255, 155, 0.15);
+            color: var(--neon-green);
+            border: 1px solid rgba(57, 255, 155, 0.3);
+        }
+        .badge-mod {
+            background: rgba(255, 179, 71, 0.12);
+            color: var(--neon-amber);
+            border: 1px solid rgba(255, 179, 71, 0.3);
+        }
+        .badge-spec {
+            background: rgba(168, 85, 247, 0.12);
+            color: var(--neon-purple);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+
+        /* ── Main Content ── */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Top Bar ── */
+        .top-bar {
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 8;
+        }
+        .top-bar-title {
+            font-family: var(--font-display);
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: var(--text-primary);
+        }
+        .top-bar-stats {
+            display: flex;
+            gap: 18px;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+        .stat-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+        .stat-pill .stat-val {
+            color: var(--neon-cyan);
+            font-weight: 600;
+            text-shadow: 0 0 6px rgba(0, 240, 255, 0.4);
+        }
+        .stat-pill .stat-val.warn {
+            color: var(--neon-amber);
+            text-shadow: 0 0 6px rgba(255, 179, 71, 0.5);
+        }
+        .stat-pill .stat-val.good {
+            color: var(--neon-green);
+            text-shadow: 0 0 6px rgba(57, 255, 155, 0.5);
+        }
+
+        /* ── Kanban Board ── */
+        .kanban-board {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            padding: 20px 24px 28px;
+            overflow-x: auto;
+            align-items: start;
+        }
+        @media (max-width: 1400px) {
+            .kanban-board {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (max-width: 1050px) {
+            .kanban-board {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 700px) {
+            .kanban-board {
+                grid-template-columns: 1fr;
+                padding: 12px;
+            }
+            .sidebar {
+                position: fixed;
+                left: -310px;
+                top: 0;
+                height: 100vh;
+                z-index: 50;
+                transition: left var(--transition-smooth);
+                box-shadow: 4px 0 40px rgba(0, 0, 0, 0.6);
+            }
+            .sidebar.open {
+                left: 0;
+            }
+            .mobile-menu-btn {
+                display: flex !important;
+            }
+        }
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 60;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            font-size: 1.3rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-neon-cyan);
+            transition: all var(--transition-fast);
+        }
+        .mobile-menu-btn:hover {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.5);
+        }
+
+        /* ── Kanban Column ── */
+        .kanban-column {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 300px;
+            backdrop-filter: blur(6px);
+            transition: border-color var(--transition-smooth);
+        }
+        .kanban-column:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .column-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-display);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+        .col-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .col-dot.cyan {
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+        .col-dot.magenta {
+            background: var(--neon-magenta);
+            box-shadow: 0 0 10px var(--neon-magenta);
+        }
+        .col-dot.purple {
+            background: var(--neon-purple);
+            box-shadow: 0 0 10px var(--neon-purple);
+        }
+        .col-dot.green {
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+        }
+        .col-count {
+            margin-left: auto;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* ── Kanban Card ── */
+        .kanban-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all var(--transition-bounce);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+        }
+        .kanban-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            opacity: 0;
+            transition: opacity var(--transition-smooth);
+        }
+        .kanban-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-card-hover);
+            border-color: rgba(0, 240, 255, 0.35);
+            z-index: 3;
+        }
+        .kanban-card:hover::before {
+            opacity: 1;
+        }
+        .kanban-card.priority-high {
+            border-left: 3px solid var(--neon-red);
+        }
+        .kanban-card.priority-med {
+            border-left: 3px solid var(--neon-amber);
+        }
+        .kanban-card.priority-low {
+            border-left: 3px solid var(--neon-purple);
+        }
+        .card-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+        .card-tag {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.04em;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        .tag-evidence {
+            background: rgba(0, 240, 255, 0.08);
+            color: var(--neon-cyan);
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+        .tag-priority {
+            background: rgba(255, 45, 247, 0.08);
+            color: var(--neon-magenta);
+            border-color: rgba(255, 45, 247, 0.3);
+        }
+        .tag-module {
+            background: rgba(168, 85, 247, 0.08);
+            color: var(--neon-purple);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+        .tag-energy {
+            background: rgba(57, 255, 155, 0.08);
+            color: var(--neon-green);
+            border-color: rgba(57, 255, 155, 0.3);
+        }
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            margin-bottom: 4px;
+            color: #f0f0ff;
+        }
+        .card-desc {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        .card-meta {
+            display: flex;
+            gap: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+        }
+        .card-meta span {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .card-probability {
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            color: var(--text-muted);
+        }
+        .prob-bar {
+            display: flex;
+            gap: 2px;
+            margin-top: 3px;
+            height: 4px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .prob-seg {
+            height: 100%;
+            border-radius: 1px;
+        }
+        .prob-seg.high {
+            background: var(--neon-cyan);
+        }
+        .prob-seg.med {
+            background: var(--neon-amber);
+        }
+        .prob-seg.low {
+            background: var(--neon-purple);
+        }
+
+        /* ── Card Detail Modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 4, 12, 0.85);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition-smooth);
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius-xl);
+            padding: 28px 30px;
+            max-width: 620px;
+            width: 92%;
+            max-height: 82vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), var(--shadow-neon-purple);
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: color var(--transition-fast);
+            font-family: var(--font-mono);
+        }
+        .modal-close:hover {
+            color: var(--neon-red);
+        }
+        .modal h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            letter-spacing: 0.04em;
+            margin-bottom: 10px;
+            color: #f0f0ff;
+        }
+        .modal .modal-section {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-subtle);
+        }
+        .modal .modal-section h4 {
+            font-family: var(--font-display);
+            font-size: 0.7rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--neon-cyan);
+            margin-bottom: 6px;
+        }
+        .modal .modal-section p,
+        .modal .modal-section li {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .modal .modal-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .modal .modal-section ul li::before {
+            content: '▸';
+            color: var(--neon-purple);
+            margin-right: 8px;
+        }
+
+        /* ── Glow pulse for active elements ── */
+        @keyframes glowPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(0, 240, 255, 0.55);
+            }
+        }
+        .glow-pulse {
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        /* ── Responsive sidebar overlay ── */
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 45;
+        }
+        @media (max-width: 700px) {
+            .sidebar-backdrop.active {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <div class="app-container">
+        <!-- ═══════════════ SIDEBAR ═══════════════ -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">COACH-OS</div>
+                <div class="sidebar-version">v2.0 · NEON EDITION</div>
+                <div class="sidebar-status">
+                    <span class="status-dot"></span> System Active · All Modules Loaded
+                </div>
+            </div>
+            <nav class="sidebar-nav" id="sidebarNav">
+                <!-- Category 1: Core Framework -->
+                <div class="nav-category open">
+                    <button class="nav-cat-header" data-cat="core">
+                        <span class="cat-icon">🎯</span> Core Framework
+                        <span class="cat-arrow">▸</span>
+                    </button>
+                    <ul class="nav-items">
+                        <li class="nav-item active" data-module="priority-hierarchy">
+                            <span class="item-dot"></span> Priority Hierarchy
+                            <span class="item-badge badge-high">CRITICAL</span>
+                        </li>
+                        <li class="nav-item" data-module="success-metrics">
+                            <span class="item-dot"></span> Success Metrics
+                        </li>
+                        <li class="nav-item" data-module="evidence-scale">
+                            <span class="item-dot"></span> Evidence Scale
+                            <span class="item-badge badge-high">HIGH</span>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Category 2: Analysis Tools -->
+                <div class="nav-category open">
+                    <button class="nav-cat-header" data-cat="analysis">
+                        <span class="cat-icon">🔍</span> Analysis Tools
+                        <span class="cat-arrow">▸</span>
+                    </button>
+                    <ul class="nav-items">
+                        <li class="nav-item" data-module="failure-analysis">
+                            <span class="item-dot"></span> Failure Analysis
+                        </li>
+                        <li class="nav-item" data-module="quantification">
+                            <span class="item-dot"></span> Force Quantification
+                        </li>
+                        <li class="nav-item" data-module="probability">
+                            <span class="item-dot"></span> Probability Over Certainty
+                        </li>
+                        <li class="nav-item" data-module="opportunity-cost">
+                            <span class="item-dot"></span> Opportunity Cost
+                        </li>
+                    </ul>
+                </div>
+                <!-- Category 3: Cognitive -->
+                <div class="nav-category open">
+                    <button class="nav-cat-header" data-cat="cognitive">
+                        <span class="cat-icon">🧠</span> Cognitive Layer
+                        <span class="cat-arrow">▸</span>
+                    </button>
+                    <ul class="nav-items">
+                        <li class="nav-item" data-module="energy-management">
+                            <span class="item-dot"></span> Energy Management
+                            <span class="item-badge badge-mod">BIO</span>
+                        </li>
+                        <li class="nav-item" data-module="identity-layer">
+                            <span class="item-dot"></span> Identity Layer
+                        </li>
+                        <li class="nav-item" data-module="anti-rationalization">
+                            <span class="item-dot"></span> Anti-Rationalization
+                        </li>
+                        <li class="nav-item" data-module="bias-detection">
+                            <span class="item-dot"></span> Bias Detection (14 Biases)
+                        </li>
+                    </ul>
+                </div>
+                <!-- Category 4: Review Cycles -->
+                <div class="nav-category">
+                    <button class="nav-cat-header" data-cat="review">
+                        <span class="cat-icon">📊</span> Review Cycles
+                        <span class="cat-arrow">▸</span>
+                    </button>
+                    <ul class="nav-items">
+                        <li class="nav-item" data-module="weekly-review">
+                            <span class="item-dot"></span> Weekly Review
+                        </li>
+                        <li class="nav-item" data-module="monthly-audit">
+                            <span class="item-dot"></span> Monthly Audit (8 Domains)
+                        </li>
+                        <li class="nav-item" data-module="decision-journal">
+                            <span class="item-dot"></span> Decision Journal
+                        </li>
+                    </ul>
+                </div>
+                <!-- Category 5: System Rules -->
+                <div class="nav-category">
+                    <button class="nav-cat-header" data-cat="system">
+                        <span class="cat-icon">⚙️</span> System Rules
+                        <span class="cat-arrow">▸</span>
+                    </button>
+                    <ul class="nav-items">
+                        <li class="nav-item" data-module="response-length">
+                            <span class="item-dot"></span> Response Length Rule
+                        </li>
+                        <li class="nav-item" data-module="accountability">
+                            <span class="item-dot"></span> Accountability (3-Strike)
+                        </li>
+                        <li class="nav-item" data-module="decision-filter">
+                            <span class="item-dot"></span> Decision Filter
+                        </li>
+                        <li class="nav-item" data-module="knowledge-tracking">
+                            <span class="item-dot"></span> Knowledge Tracking
+                            <span class="item-badge badge-spec">NEW</span>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- ═══════════════ MAIN ═══════════════ -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <span class="top-bar-title">📋 Coaching Kanban Board</span>
+                <div class="top-bar-stats">
+                    <div class="stat-pill">⚖️ Weight: <span class="stat-val warn">105 → 85 kg</span></div>
+                    <div class="stat-pill">🩸 HbA1c: <span class="stat-val warn">&lt;6.5</span></div>
+                    <div class="stat-pill">💤 Sleep: <span class="stat-val">7.5h avg</span></div>
+                    <div class="stat-pill">🏋️ Gym: <span class="stat-val good">4/wk</span></div>
+                    <div class="stat-pill">💰 Target: <span class="stat-val">15–25 LPA</span></div>
+                    <div class="stat-pill">📝 LeetCode: <span class="stat-val">300 probs</span></div>
+                </div>
+            </header>
+
+            <!-- Kanban Board -->
+            <div class="kanban-board" id="kanbanBoard">
+                <!-- Column 1: INBOX -->
+                <div class="kanban-column" data-col="inbox">
+                    <div class="column-header">
+                        <span class="col-dot cyan"></span> 📥 INBOX
+                        <span class="col-count">4 items</span>
+                    </div>
+
+                    <div class="kanban-card priority-high" data-card="1" data-modules="priority-hierarchy,energy-management">
+                        <div class="card-tags">
+                            <span class="card-tag tag-priority">PRIORITY 1</span>
+                            <span class="card-tag tag-energy">ENERGY</span>
+                        </div>
+                        <div class="card-title">🌙 Late-Night AI Study vs Sleep</div>
+                        <div class="card-desc">Learning AI until 2 AM — sacrificing sleep. Priority Hierarchy says Physical Health > Skill Acquisition.</div>
+                        <div class="card-meta">
+                            <span>🔴 High Priority</span><span>⏱️ Daily occurrence</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card priority-med" data-card="2" data-modules="success-metrics,quantification">
+                        <div class="card-tags">
+                            <span class="card-tag tag-module">METRICS</span>
+                            <span class="card-tag tag-evidence">MODERATE</span>
+                        </div>
+                        <div class="card-title">📏 Define AI Career Metrics</div>
+                        <div class="card-desc">Current goals are qualitative. Need measurable targets: 6 projects, 25 OS contributions, 300 LeetCode.</div>
+                        <div class="card-meta">
+                            <span>🟡 Med Priority</span><span>🕐 2h effort</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card priority-med" data-card="3" data-modules="failure-analysis,anti-rationalization">
+                        <div class="card-tags">
+                            <span class="card-tag tag-module">FAILURE</span>
+                            <span class="card-tag tag-evidence">LOW</span>
+                        </div>
+                        <div class="card-title">🔍 Procrastination Pattern — Root Cause</div>
+                        <div class="card-desc">"I procrastinate" — needs quantification. Times/week? Context? Difficulty? Anti-rationalization check required.</div>
+                        <div class="card-meta">
+                            <span>🟡 Med Priority</span><span>🔄 Recurring</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card priority-low" data-card="4" data-modules="opportunity-cost,decision-filter">
+                        <div class="card-tags">
+                            <span class="card-tag tag-module">OPP COST</span>
+                        </div>
+                        <div class="card-title">🎓 Bootcamp vs Self-Study Decision</div>
+                        <div class="card-desc">Evaluate trade-offs: time, money, energy, learning depth. Decision Filter needed.</div>
+                        <div class="card-meta">
+                            <span>🟣 Low Priority</span><span>📅 30-day review</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: ANALYZING -->
+                <div class="kanban-column" data-col="analyzing">
+                    <div class="column-header">
+                        <span class="col-dot magenta"></span> 🔬 ANALYZING
+                        <span class="col-count">3 items</span>
+                    </div>
+
+                    <div class="kanban-card priority-high" data-card="5" data-modules="energy-management,probability">
+                        <div class="card-tags">
+                            <span class="card-tag tag-energy">GLUCOSE</span>
+                            <span class="card-tag tag-evidence">HIGH</span>
+                        </div>
+                        <div class="card-title">🩸 Blood Sugar & Focus Connection</div>
+                        <div class="card-desc">Glucose variability may explain afternoon crashes. HbA1c tracking + energy log correlation.</div>
+                        <div class="card-probability">
+                            Root Cause Probabilities:
+                            <div class="prob-bar">
+                                <div class="prob-seg high" style="width:65%"></div>
+                                <div class="prob-seg med" style="width:20%"></div>
+                                <div class="prob-seg low" style="width:15%"></div>
+                            </div>
+                            <span style="font-size:0.6rem;">65% glucose | 20% sleep debt | 15% decision fatigue</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card priority-med" data-card="6" data-modules="identity-layer,anti-rationalization">
+                        <div class="card-tags">
+                            <span class="card-tag tag-module">IDENTITY</span>
+                        </div>
+                        <div class="card-title">🪞 Identity Shift: Procrastinator → Disciplined</div>
+                        <div class="card-desc">Current: "I procrastinate." Desired: "I finish difficult work before comfort." Need today's proof evidence.</div>
+                        <div class="card-meta">
+                            <span>🟡 In Progress</span><span>📝 Awaiting proof log</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card priority-med" data-card="7" data-modules="bias-detection,decision-journal">
+                        <div class="card-tags">
+                            <span class="card-tag tag-module">BIAS</span>
+                            <span class="card-tag tag-evidence">SPECULATIVE</span>
+                        </div>
+                        <div class="card-title">🧩 Planning Fallacy in Study Schedule</div>
+                        <div class="card-desc">Overestimating daily study capacity. Bias check: planning fallacy + Dunning-Kruger + survivorship bias.</div>
+                        <div class="card-meta">
+                            <span>🟡 Analyzing</span><span>🔬 14 biases to screen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 3: RECOMMENDATIONS -->
+                <div class="kanban-column" data-col="recommendations">
+                    <div class="column-header">
+                        <span class="col-dot purple"></span> 💡 RECOMMENDATIONS
+                        <span class="col-count">3 items</span>
+                    </div>
+
+                    <div class="kanban-card priority-high" data-card="8" data-modules="decision-filter,opportunity-cost,evidence-scale">
+                        <div class="card-tags">
+                            <span class="card-tag tag-evidence">HIGH</span>
+                            <span class="card-tag tag-priority">IMPACT 9/10</span>
+                        </div>
+                        <div class="card-title">✅ Sleep-First Protocol</div>
+                        <div class="card-desc">Decision Filter: Impact 9, Difficulty 6, Reversible. All AI study stops at 10:30 PM. No exceptions.</div>
+                        <div class="card-meta">
+                            <span>🟢 Recommended</span><span>⚡ High leverage</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card priority-med" data-card="9" data-modules="success-metrics,weekly-review">
+                        <div class="card-tags">
+                            <span class="card-tag tag-module">SYSTEM</span>
+                        </div>
+                        <div class="card-title">📊 Weekly Review Template Active</div>
+                        <div class="card-desc">Every Sunday: Wins, Failures, Lessons, Bottleneck, One System Improvement, Next Week's Focus.</div>
+                        <div class="card-meta">
+                            <span>🟢 Active</span><span>📅 Next: Sunday</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card priority-low" data-card="10" data-modules="knowledge-tracking,response-length">
+                        <div class="card-tags">
+                            <span class="card-tag tag-module">LEARNING</span>
+                            <span class="card-tag tag-evidence">MODERATE</span>
+                        </div>
+                        <div class="card-title">📚 Knowledge Tracker — Python Advanced</div>
+                        <div class="card-desc">Status: Learning → Needs Review. Track: decorators, generators, async/await, type hints.</div>
+                        <div class="card-meta">
+                            <span>🟣 Tracking</span><span>📈 40% mastery</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 4: COMPLETED / REVIEW -->
+                <div class="kanban-column" data-col="completed">
+                    <div class="column-header">
+                        <span class="col-dot green"></span> ✅ COMPLETED
+                        <span class="col-count">2 items</span>
+                    </div>
+
+                    <div class="kanban-card priority-high glow-pulse" data-card="11" data-modules="monthly-audit,accountability">
+                        <div class="card-tags">
+                            <span class="card-tag tag-evidence">HIGH</span>
+                            <span class="card-tag tag-energy">AUDIT</span>
+                        </div>
+                        <div class="card-title">📋 Monthly Audit — Health Domain</div>
+                        <div class="card-desc">Rating: 6/10. Trend: Improving. HbA1c trending down, gym consistency up. Sleep still bottleneck.</div>
+                        <div class="card-meta">
+                            <span>✅ Done</span><span>📅 Reviewed 30d</span>
+                        </div>
+                    </div>
+
+                    <div class="kanban-card priority-med" data-card="12" data-modules="decision-journal,probability">
+                        <div class="card-tags">
+                            <span class="card-tag tag-module">JOURNAL</span>
+                        </div>
+                        <div class="card-title">📓 Decision: Quit Evening Social Media</div>
+                        <div class="card-desc">Prediction: +90min productive time/day. Confidence: 85%. Review in 30 days. Learned: accurate within 12%.</div>
+                        <div class="card-meta">
+                            <span>✅ Calibrated</span><span>🎯 85% → 73% actual</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile menu button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle sidebar">☰</button>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="modalContent">
+            <button class="modal-close" id="modalClose">✕</button>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ── Sidebar category toggle ──
+            const navCategories = document.querySelectorAll('.nav-category');
+            navCategories.forEach(cat => {
+                const header = cat.querySelector('.nav-cat-header');
+                header.addEventListener('click', () => {
+                    cat.classList.toggle('open');
+                });
+            });
+
+            // ── Sidebar nav item click → highlight + scroll Kanban ──
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Remove active from all
+                    navItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const moduleName = this.getAttribute('data-module');
+                    highlightKanbanCards(moduleName);
+                });
+            });
+
+            function highlightKanbanCards(moduleName) {
+                // Remove all card highlights
+                const allCards = document.querySelectorAll('.kanban-card');
+                allCards.forEach(card => {
+                    card.style.outline = '';
+                    card.style.boxShadow = '';
+                    card.style.zIndex = '';
+                });
+
+                if (!moduleName) return;
+
+                // Find matching cards
+                const matchingCards = document.querySelectorAll(
+                    `.kanban-card[data-modules*="${moduleName}"]`
+                );
+                matchingCards.forEach(card => {
+                    card.style.outline = '2px solid var(--neon-cyan)';
+                    card.style.boxShadow = '0 0 24px rgba(0,240,255,0.45), 0 8px 32px rgba(0,0,0,0.5)';
+                    card.style.zIndex = '5';
+                    // Scroll card into view
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                });
+
+                if (matchingCards.length === 0) {
+                    // Flash all columns briefly
+                    document.querySelectorAll('.kanban-column').forEach(col => {
+                        col.style.borderColor = 'rgba(255,179,71,0.5)';
+                        setTimeout(() => {
+                            col.style.borderColor = '';
+                        }, 800);
+                    });
+                }
+            }
+
+            // ── Card click → Modal ──
+            const modalOverlay = document.getElementById('modalOverlay');
+            const modalBody = document.getElementById('modalBody');
+            const modalClose = document.getElementById('modalClose');
+            const allKanbanCards = document.querySelectorAll('.kanban-card');
+
+            const cardDetails = {
+                1: {
+                    title: '🌙 Late-Night AI Study vs Sleep',
+                    modules: ['Priority Hierarchy', 'Energy Management'],
+                    evidence: 'HIGH — Strong scientific evidence on sleep deprivation impairing learning consolidation.',
+                    analysis: `
+                <p><strong>Conflict:</strong> Skill Acquisition (AI study) vs Physical Health (sleep).</p>
+                <p><strong>Priority Hierarchy Resolution:</strong> Physical Health > Career Capital > Skill Acquisition. Sleep wins every time.</p>
+                <p><strong>Energy Check:</strong> Late-night study may be driven by blood sugar instability. Check glucose levels at 10 PM.</p>
+                <p><strong>System Fix:</strong> Hard stop at 10:30 PM. All devices off. Wind-down routine starts 10 PM.</p>
+              `,
+                    opportunityCost: 'Giving up 2h of study time gains 7.5h of quality sleep, improving next-day focus by ~40% (evidence: HIGH).',
+                    decisionFilter: 'Impact: 9 | Difficulty: 6 | Reversible: Yes | Leverage: Very High → STRONG RECOMMEND'
+                },
+                5: {
+                    title: '🩸 Blood Sugar & Focus Connection',
+                    modules: ['Energy Management', 'Probability'],
+                    evidence: 'HIGH — Glucose variability directly impacts cognitive performance and impulse control.',
+                    analysis: `
+                <p><strong>Hypothesis:</strong> Afternoon energy crashes correlate with post-lunch glucose spikes/drops.</p>
+                <p><strong>Probability Breakdown:</strong></p>
+                <ul>
+                  <li>65% — Glucose variability (HbA1c currently above target)</li>
+                  <li>20% — Cumulative sleep debt</li>
+                  <li>15% — Decision fatigue from unstructured daily planning</li>
+                </ul>
+                <p><strong>Recommended:</strong> Continuous glucose monitor correlation + energy log for 2 weeks.</p>
+              `,
+                    opportunityCost: 'Time to track: ~5 min/day. Return: precise understanding of optimal work windows.',
+                    decisionFilter: 'Impact: 8 | Difficulty: 3 | Reversible: Yes | Leverage: High → RECOMMEND'
+                },
+                6: {
+                    title: '🪞 Identity Shift: Procrastinator → Disciplined',
+                    modules: ['Identity Layer', 'Anti-Rationalization'],
+                    evidence: 'MODERATE — Identity-based habit formation has good evidence with some limitations in clinical settings.',
+                    analysis: `
+                <p><strong>Current Identity:</strong> "I procrastinate."</p>
+                <p><strong>Desired Identity:</strong> "I finish difficult work before comfort."</p>
+                <p><strong>Anti-Rationalization Check:</strong> Could procrastination be explained by lack of sleep? Poor planning? Fear of failure? Ego protection?</p>
+                <p><strong>Today's Proof Required:</strong> One concrete example per day of finishing difficult work before any comfort activity.</p>
+              `,
+                    opportunityCost: 'Requires 2 min reflection daily. Builds compounding self-trust over time.',
+                    decisionFilter: 'Impact: 7 | Difficulty: 5 | Reversible: Yes | Leverage: High → RECOMMEND'
+                },
+                8: {
+                    title: '✅ Sleep-First Protocol',
+                    modules: ['Decision Filter', 'Opportunity Cost', 'Evidence Scale'],
+                    evidence: 'HIGH — Strong scientific evidence across multiple domains.',
+                    analysis: `
+                <p><strong>Protocol:</strong> All AI study stops at 10:30 PM. Wind-down 10:00–10:30 PM. Sleep 11:00 PM–6:30 AM (7.5h).</p>
+                <p><strong>Opportunity Cost:</strong> Giving up ~2h of potential study time. Gaining ~40% better next-day cognitive performance.</p>
+                <p><strong>Decision Filter:</strong></p>
+                <ul>
+                  <li>Expected Impact: 9/10</li>
+                  <li>Difficulty: 6/10</li>
+                  <li>Time Required: Zero extra time</li>
+                  <li>Financial Cost: $0</li>
+                  <li>Reversible: Yes</li>
+                  <li>Leverage: Very High — affects all other goals</li>
+                </ul>
+              `,
+                    opportunityCost: '2h less study → 40% better learning during remaining hours. Net positive.',
+                    decisionFilter: 'Impact: 9 | Difficulty: 6 | Reversible: Yes | Leverage: Very High → STRONG RECOMMEND'
+                },
+                11: {
+                    title: '📋 Monthly Audit — Health Domain',
+                    modules: ['Monthly Audit', 'Accountability Rules'],
+                    evidence: 'MODERATE — Structured review cycles show good results in behavior change literature.',
+                    analysis: `
+                <p><strong>8-Domain Audit Results:</strong></p>
+                <ul>
+                  <li>Health: 6/10 ⬆️ Improving — HbA1c trending down, gym 4x/week consistent</li>
+                  <li>Career: 5/10 ➡️ Stable — AI learning progressing, portfolio needs work</li>
+                  <li>Money: 5/10 ➡️ Stable — Tracking expenses, target 15-25 LPA</li>
+                  <li>Relationships: 7/10 ⬆️ Improving</li>
+                  <li>Learning: 6/10 ⬆️ Improving — Python advanced, SQL in progress</li>
+                  <li>Execution: 4/10 ⬇️ Declining — Procrastination still an issue</li>
+                  <li>Mental Resilience: 6/10 ➡️ Stable</li>
+                  <li>Discipline: 5/10 ⬆️ Improving — Identity work showing early results</li>
+                </ul>
+                <p><strong>Biggest Bottleneck:</strong> Sleep consistency. Once fixed, execution and discipline scores expected to rise.</p>
+              `,
+                    opportunityCost: '30 min/month for audit. Return: clear trajectory visibility across all life domains.',
+                    decisionFilter: 'Impact: 6 | Difficulty: 2 | Reversible: N/A | Leverage: Moderate → MAINTAIN'
+                },
+                12: {
+                    title: '📓 Decision: Quit Evening Social Media',
+                    modules: ['Decision Journal', 'Probability'],
+                    evidence: 'MODERATE — Self-experiment with 85% confidence prediction.',
+                    analysis: `
+                <p><strong>Original Prediction:</strong> +90min productive time/day. Confidence: 85%.</p>
+                <p><strong>30-Day Review:</strong> Actual gain: +78min/day. Prediction error: 12% (within acceptable range).</p>
+                <p><strong>Learned:</strong> Calibration slightly optimistic. Future predictions should discount by ~10-15%.</p>
+                <p><strong>Decision Journal Entry:</strong> Logged and reviewed. Improves future calibration.</p>
+              `,
+                    opportunityCost: 'Social connection time reduced. Mitigated by intentional morning check-in (15 min).',
+                    decisionFilter: 'Impact: 7 (predicted) → 6.5 (actual) | Reversible: Yes | Leverage: High'
+                }
+            };
+
+            allKanbanCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const cardId = parseInt(this.getAttribute('data-card'));
+                    const detail = cardDetails[cardId];
+                    if (!detail) return;
+
+                    modalBody.innerHTML = `
+                <h3>${detail.title}</h3>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                  ${detail.modules.map(m => `<span class="card-tag tag-module">${m}</span>`).join('')}
+                  <span class="card-tag tag-evidence">${detail.evidence.split(' — ')[0]}</span>
+                </div>
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:12px;">${detail.evidence}</p>
+                <div class="modal-section">
+                  <h4>📋 Analysis</h4>
+                  ${detail.analysis}
+                </div>
+                <div class="modal-section">
+                  <h4>⚖️ Opportunity Cost</h4>
+                  <p>${detail.opportunityCost}</p>
+                </div>
+                <div class="modal-section">
+                  <h4>🔍 Decision Filter Summary</h4>
+                  <p>${detail.decisionFilter}</p>
+                </div>
+              `;
+                    modalOverlay.classList.add('active');
+                });
+            });
+
+            modalClose.addEventListener('click', () => {
+                modalOverlay.classList.remove('active');
+            });
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) {
+                    modalOverlay.classList.remove('active');
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+                    modalOverlay.classList.remove('active');
+                }
+            });
+
+            // ── Mobile sidebar toggle ──
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                sidebarBackdrop.classList.toggle('active');
+            });
+            sidebarBackdrop.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                sidebarBackdrop.classList.remove('active');
+            });
+
+            // ── Initial: highlight Priority Hierarchy cards ──
+            setTimeout(() => {
+                highlightKanbanCards('priority-hierarchy');
+            }, 400);
+
+            console.log('%c🚀 COACH-OS v2.0 %cNeon Kanban %cActive',
+                'color:#00f0ff;font-size:1.2em;',
+                'color:#ff2df7;',
+                'color:#39ff9b;');
+            console.log('%cAll 18 modules loaded. Click sidebar items to filter cards. Click cards for detail view.',
+                'color:#9898b8;');
+        })();
+    </script>
+</body>
+</html>
